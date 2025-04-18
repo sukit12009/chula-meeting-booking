@@ -1,30 +1,50 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import allLocales from '@fullcalendar/core/locales-all';
+import thLocale from '@fullcalendar/core/locales/th';
 
-interface FullCalendarProps {
-  events: any[];
+// Define the Booking interface
+interface Booking {
+  _id: string;
+  roomId: any;
+  userId: any;
+  title: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  details: string;
+  status: "confirmed" | "cancelled";
 }
 
-export default function FullCalendarComponent({ events }: FullCalendarProps) {
+// Define props interface to include bookings
+export interface FullCalendarProps {
+  bookings: Booking[];
+}
+
+const FullCalendarComponent: React.FC<FullCalendarProps> = ({ bookings }) => {
   const router = useRouter();
-  const [isMounted, setIsMounted] = useState(false);
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted) {
-    return <div className="h-96 flex items-center justify-center bg-gray-50">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-    </div>;
-  }
+  // Convert bookings to events format that FullCalendar expects
+  const events = bookings.map(booking => {
+    const [year, month, day] = booking.date.split('T')[0].split('-');
+    const startDateTime = `${year}-${month}-${day}T${booking.startTime}:00`;
+    const endDateTime = `${year}-${month}-${day}T${booking.endTime}:00`;
+    
+    return {
+      id: booking._id,
+      title: booking.title,
+      start: startDateTime,
+      end: endDateTime,
+      extendedProps: {
+        room: booking.roomId.name
+      }
+    };
+  });
 
   return (
     <FullCalendar
@@ -36,27 +56,29 @@ export default function FullCalendarComponent({ events }: FullCalendarProps) {
         right: 'dayGridMonth,timeGridWeek,timeGridDay'
       }}
       events={events}
-      locales={allLocales}
-      locale="th"
-      height="auto"
+      locale={thLocale}
+      height="100%"
       allDaySlot={false}
       slotMinTime="08:00:00"
       slotMaxTime="20:00:00"
-      businessHours={{
-        daysOfWeek: [1, 2, 3, 4, 5], // จันทร์ถึงศุกร์
-        startTime: '08:00',
-        endTime: '17:00',
+      eventTimeFormat={{
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
       }}
+      eventContent={(eventInfo) => (
+        <div>
+          <b>{eventInfo.timeText}</b>
+          <p>{eventInfo.event.title}</p>
+          <p>{eventInfo.event.extendedProps.room}</p>
+        </div>
+      )}
       eventClick={(info) => {
         const bookingId = info.event.id;
         router.push(`/bookings/${bookingId}`);
       }}
-      eventTimeFormat={{
-        hour: '2-digit',
-        minute: '2-digit',
-        meridiem: false,
-        hour12: false
-      }}
     />
   );
-} 
+};
+
+export default FullCalendarComponent; 
