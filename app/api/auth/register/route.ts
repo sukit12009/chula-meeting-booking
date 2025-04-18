@@ -26,7 +26,7 @@ export async function POST(request: Request) {
       name,
       email,
       password: hashedPassword,
-      role: "teacher", // กำหนดค่าเริ่มต้นเป็น teacher
+      role: "user", // กำหนดค่าเริ่มต้นเป็น user
     });
 
     // ส่งข้อมูลผู้ใช้กลับไป (ไม่รวมรหัสผ่าน)
