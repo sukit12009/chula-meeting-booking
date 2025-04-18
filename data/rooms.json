@@ -1,0 +1,30 @@
+[
+  {
+    "id": 1,
+    "name": "ห้องประชุมใหญ่",
+    "capacity": 50,
+    "equipment": ["โปรเจคเตอร์", "ไมโครโฟน", "เครื่องปรับอากาศ", "ระบบเสียง"],
+    "image": "/images/large-meeting-room.jpg"
+  },
+  {
+    "id": 2,
+    "name": "ห้องประชุมเล็ก",
+    "capacity": 20,
+    "equipment": ["โปรเจคเตอร์", "ไวท์บอร์ด", "เครื่องปรับอากาศ"],
+    "image": "/images/small-meeting-room.jpg"
+  },
+  {
+    "id": 3,
+    "name": "ห้องอเนกประสงค์",
+    "capacity": 100,
+    "equipment": ["โปรเจคเตอร์", "ไมโครโฟน", "เครื่องปรับอากาศ", "ระบบเสียง", "เวที"],
+    "image": "/images/multi-purpose-room.jpg"
+  },
+  {
+    "id": 4,
+    "name": "ห้องสัมมนา",
+    "capacity": 30,
+    "equipment": ["โปรเจคเตอร์", "ไวท์บอร์ด", "เครื่องปรับอากาศ", "คอมพิวเตอร์"],
+    "image": "/images/seminar-room.jpg"
+  }
+] 

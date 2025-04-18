@@ -1,0 +1,45 @@
+[
+  {
+    "id": 1,
+    "roomId": 1,
+    "userId": 1,
+    "title": "ประชุมฝ่ายบริหาร",
+    "date": "2025-04-18",
+    "startTime": "09:00",
+    "endTime": "12:00",
+    "details": "ประชุมแผนการดำเนินงานประจำเดือน",
+    "status": "cancelled"
+  },
+  {
+    "id": 2,
+    "roomId": 2,
+    "userId": 2,
+    "title": "อบรมพนักงานใหม่",
+    "date": "2023-10-16",
+    "startTime": "13:00",
+    "endTime": "16:00",
+    "details": "อบรมพนักงานใหม่เกี่ยวกับระบบการทำงาน",
+    "status": "cancelled"
+  },
+  {
+    "id": 3,
+    "roomId": 3,
+    "userId": 1,
+    "title": "งานเลี้ยงปีใหม่",
+    "date": "2023-12-25",
+    "startTime": "18:00",
+    "endTime": "22:00",
+    "details": "งานเลี้ยงสังสรรค์ปีใหม่ประจำโรงเรียน",
+    "status": "cancelled"
+  },
+  {
+    "id": 4,
+    "roomId": 4,
+    "title": "ประชุม",
+    "date": "2025-04-18",
+    "startTime": "14:01",
+    "endTime": "14:04",
+    "details": "",
+    "status": "cancelled"
+  }
+]

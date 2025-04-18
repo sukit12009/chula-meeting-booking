@@ -1,0 +1,209 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ส่วนอื่นๆ ของ CSS */
+
+:root {
+  --foreground-rgb: 66, 66, 66;
+  --background-rgb: 255, 255, 255;
+  --chula-pink: 231, 84, 128;
+  --chula-gold: 255, 215, 0;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-rgb));
+  font-family: 'Sarabun', Arial, Helvetica, sans-serif;
+  margin: 0;
+}
+
+/* FullCalendar Customization */
+.fc-event {
+  cursor: pointer;
+}
+
+.fc-toolbar-title {
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+}
+
+.fc-button-primary {
+  background-color: #E75480 !important;
+  border-color: #E75480 !important;
+}
+
+.fc-button-primary:hover {
+  background-color: #C23B69 !important;
+  border-color: #C23B69 !important;
+}
+
+.fc-button-active {
+  background-color: #C23B69 !important;
+  border-color: #C23B69 !important;
+}
+
+/* Custom Theme Classes */
+.bg-primary {
+  background-color: #E75480;
+}
+
+.bg-primary-light {
+  background-color: #F9E6EE;
+}
+
+.bg-primary-dark {
+  background-color: #C23B69;
+}
+
+.text-primary {
+  color: #E75480;
+}
+
+.border-primary {
+  border-color: #E75480;
+}
+
+.hover\:bg-primary-dark:hover {
+  background-color: #C23B69;
+}
+
+.bg-gold {
+  background-color: #FFD700;
+}
+
+.bg-gold-light {
+  background-color: #FFF8E1;
+}
+
+.text-gold {
+  color: #FFD700;
+}
+
+.border-gold {
+  border-color: #FFD700;
+}
+
+.bg-gray-light {
+  background-color: #F5F5F5;
+}
+
+.bg-gray-medium {
+  background-color: #9E9E9E;
+}
+
+.text-gray-dark {
+  color: #424242;
+}
+
+.border-gray-light {
+  border-color: #F5F5F5;
+}
+
+.hover\:bg-gray-medium:hover {
+  background-color: #9E9E9E;
+}
+
+.hover\:bg-gray-dark:hover {
+  background-color: #424242;
+}
+
+.focus\:ring-primary:focus {
+  --tw-ring-color: #E75480;
+}
+
+/* Chula Style Header */
+.chula-header {
+  background-color: white;
+  border-bottom: 1px solid #E75480;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.chula-nav-item {
+  position: relative;
+  padding: 0.75rem 1rem;
+  color: #424242;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.chula-nav-item:hover {
+  color: #E75480;
+}
+
+.chula-nav-item.active {
+  color: #E75480;
+}
+
+.chula-nav-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: #E75480;
+}
+
+.chula-footer {
+  background-color: #F9E6EE;
+  border-top: 4px solid #E75480;
+}
+
+.chula-card {
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transition: all 0.3s;
+}
+
+.chula-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+}
+
+.chula-button {
+  background-color: #E75480;
+  color: white;
+  padding: 0.5rem 1.5rem;
+  border-radius: 0.25rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.chula-button:hover {
+  background-color: #C23B69;
+}
+
+.chula-button-outline {
+  background-color: transparent;
+  color: #E75480;
+  border: 1px solid #E75480;
+  padding: 0.5rem 1.5rem;
+  border-radius: 0.25rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.chula-button-outline:hover {
+  background-color: #E75480;
+  color: white;
+}
+
+.chula-gold-accent {
+  background: linear-gradient(to right, #FFD700, #DAA520);
+}
