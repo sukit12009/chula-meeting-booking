@@ -74,7 +74,6 @@ export default function Dashboard() {
 
         setRooms(roomsData);
         setBookings(bookingsData);
-        console.log(bookingsData);
       } catch (err) {
         setError("เกิดข้อผิดพลาดในการโหลดข้อมูล");
         console.error(err);
@@ -144,10 +143,7 @@ export default function Dashboard() {
       <Header />
 
       <main className="flex-grow container mx-auto px-4 py-8">
-        <div className="flex flex-col md:flex-row justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-dark mb-4 md:mb-0">
-            แดชบอร์ด
-          </h1>
+        <div className="flex flex-col md:flex-row justify-end items-center mb-3">
           <Link
             href="/booking"
             className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"

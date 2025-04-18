@@ -41,7 +41,7 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
   const [error, setError] = useState("");
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelling, setCancelling] = useState(false);
-  
+
   // เพิ่มสถานะสำหรับการแก้ไข
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editFormData, setEditFormData] = useState({
@@ -49,10 +49,15 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
     date: "",
     startTime: "",
     endTime: "",
-    details: ""
+    details: "",
   });
   const [updating, setUpdating] = useState(false);
-  
+
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
   const router = useRouter();
   const { data: session, status } = useSession();
 
@@ -68,7 +73,7 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
       try {
         setLoading(true);
         const response = await fetch(`/api/bookings/${params.id}`);
-        
+
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error("ไม่พบข้อมูลการจอง");
@@ -76,17 +81,17 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
             throw new Error("เกิดข้อผิดพลาดในการโหลดข้อมูล");
           }
         }
-        
+
         const data = await response.json();
         setBooking(data);
-        
+
         // เตรียมข้อมูลสำหรับฟอร์มแก้ไข
         setEditFormData({
           title: data.title,
-          date: data.date.split('T')[0], // แปลงรูปแบบวันที่เป็น YYYY-MM-DD
+          date: data.date.split("T")[0], // แปลงรูปแบบวันที่เป็น YYYY-MM-DD
           startTime: data.startTime,
           endTime: data.endTime,
-          details: data.details || ""
+          details: data.details || "",
         });
       } catch (err: any) {
         setError(err.message);
@@ -104,20 +109,23 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
   const handleCancel = async () => {
     try {
       setCancelling(true);
-      
+
       const response = await fetch(`/api/bookings/${params.id}`, {
         method: "DELETE",
       });
-      
+
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || "เกิดข้อผิดพลาดในการยกเลิกการจอง");
       }
-      
+
       // อัพเดทข้อมูลการจอง
       const updatedBooking = await response.json();
       setBooking(updatedBooking.booking);
-      
+
+      // แสดง modal สำเร็จ
+      setShowSuccessModal(true);
+
       // ปิด dialog
       setShowCancelDialog(false);
     } catch (err: any) {
@@ -129,18 +137,20 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
   };
 
   // เพิ่มฟังก์ชันสำหรับการแก้ไขข้อมูล
-  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleEditChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setEditFormData(prev => ({
+    setEditFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleEditSubmit = async () => {
     try {
       setUpdating(true);
-      
+
       const response = await fetch(`/api/bookings/${params.id}`, {
         method: "PUT",
         headers: {
@@ -148,20 +158,24 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
         },
         body: JSON.stringify(editFormData),
       });
-      
+
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || "เกิดข้อผิดพลาดในการอัพเดทข้อมูล");
+        setErrorMessage(data.error || "เกิดข้อผิดพลาดในการอัพเดทข้อมูล");
+        setShowEditDialog(false);
+        setShowErrorModal(true);
+      } else {
+        // อัพเดทข้อมูลการจอง
+        const updatedData = await response.json();
+        setBooking(updatedData.booking);
+
+        // แสดง modal สำเร็จ
+        setShowSuccessModal(true);
+
+        // ปิด dialog
+        setShowEditDialog(false);
       }
-      
-      // อัพเดทข้อมูลการจอง
-      const updatedData = await response.json();
-      setBooking(updatedData.booking);
-      
-      // ปิด dialog
-      setShowEditDialog(false);
     } catch (err: any) {
-      setError(err.message);
       console.error(err);
     } finally {
       setUpdating(false);
@@ -180,7 +194,7 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
-      
+
       <main className="flex-grow container mx-auto px-4 py-8">
         <div className="flex items-center mb-6">
           <button
@@ -204,7 +218,7 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
             ย้อนกลับ
           </button>
         </div>
-        
+
         {loading ? (
           <div className="text-center py-12">
             <div className="spinner mb-4"></div>
@@ -235,7 +249,7 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
                 <h1 className="text-2xl font-bold mb-1">{booking.title}</h1>
                 <p className="text-lg">{booking.roomId.name}</p>
               </div>
-              
+
               {/* Status Badge */}
               <div className="absolute top-4 right-4">
                 <span
@@ -249,7 +263,7 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
                 </span>
               </div>
             </div>
-            
+
             {/* Booking Details */}
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -257,33 +271,37 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
                   <h2 className="text-lg font-semibold text-gray-dark mb-4">
                     รายละเอียดการจอง
                   </h2>
-                  
+
                   <div className="space-y-3">
                     <div>
                       <p className="text-gray-medium text-sm">วันที่</p>
-                      <p className="text-gray-dark">{formatDate(booking.date)}</p>
+                      <p className="text-gray-dark">
+                        {formatDate(booking.date)}
+                      </p>
                     </div>
-                    
+
                     <div>
                       <p className="text-gray-medium text-sm">เวลา</p>
                       <p className="text-gray-dark">
                         {booking.startTime} - {booking.endTime} น.
                       </p>
                     </div>
-                    
+
                     <div>
                       <p className="text-gray-medium text-sm">ผู้จอง</p>
                       <p className="text-gray-dark">{booking.userId.name}</p>
                     </div>
-                    
+
                     <div>
                       <p className="text-gray-medium text-sm">อีเมล</p>
                       <p className="text-gray-dark">{booking.userId.email}</p>
                     </div>
-                    
+
                     {booking.details && (
                       <div>
-                        <p className="text-gray-medium text-sm">รายละเอียดเพิ่มเติม</p>
+                        <p className="text-gray-medium text-sm">
+                          รายละเอียดเพิ่มเติม
+                        </p>
                         <p className="text-gray-dark whitespace-pre-line">
                           {booking.details}
                         </p>
@@ -291,27 +309,29 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
                     )}
                   </div>
                 </div>
-                
+
                 <div>
                   <h2 className="text-lg font-semibold text-gray-dark mb-4">
                     ข้อมูลห้องประชุม
                   </h2>
-                  
+
                   <div className="space-y-3">
                     <div>
                       <p className="text-gray-medium text-sm">ชื่อห้อง</p>
                       <p className="text-gray-dark">{booking.roomId.name}</p>
                     </div>
-                    
+
                     <div>
                       <p className="text-gray-medium text-sm">ความจุ</p>
-                      <p className="text-gray-dark">{booking.roomId.capacity} คน</p>
+                      <p className="text-gray-dark">
+                        {booking.roomId.capacity} คน
+                      </p>
                     </div>
-                    
+
                     <div>
                       <p className="text-gray-medium text-sm">อุปกรณ์</p>
                       <ul className="list-disc list-inside text-gray-dark">
-                        {booking.roomId.equipment.map((item, index) => (
+                        {booking.roomId.equipment?.map((item, index) => (
                           <li key={index}>{item}</li>
                         ))}
                       </ul>
@@ -319,7 +339,7 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
                   </div>
                 </div>
               </div>
-              
+
               {/* Actions */}
               {booking.status === "confirmed" && booking.isOwner && (
                 <div className="mt-8 flex justify-end space-x-4">
@@ -341,9 +361,9 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
           </div>
         ) : null}
       </main>
-      
+
       <Footer />
-      
+
       {/* Cancel Confirmation Dialog */}
       <Dialog
         isOpen={showCancelDialog}
@@ -375,7 +395,7 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
           หมายเหตุ: การยกเลิกไม่สามารถเปลี่ยนกลับได้
         </p>
       </Dialog>
-      
+
       {/* Edit Booking Dialog */}
       <Dialog
         isOpen={showEditDialog}
@@ -402,7 +422,10 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
       >
         <div className="space-y-4">
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-dark mb-1">
+            <label
+              htmlFor="title"
+              className="block text-sm font-medium text-gray-dark mb-1"
+            >
               หัวข้อการประชุม
             </label>
             <input
@@ -415,9 +438,12 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
               required
             />
           </div>
-          
+
           <div>
-            <label htmlFor="date" className="block text-sm font-medium text-gray-dark mb-1">
+            <label
+              htmlFor="date"
+              className="block text-sm font-medium text-gray-dark mb-1"
+            >
               วันที่
             </label>
             <input
@@ -430,10 +456,13 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
               required
             />
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="startTime" className="block text-sm font-medium text-gray-dark mb-1">
+              <label
+                htmlFor="startTime"
+                className="block text-sm font-medium text-gray-dark mb-1"
+              >
                 เวลาเริ่มต้น
               </label>
               <input
@@ -446,9 +475,12 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
                 required
               />
             </div>
-            
+
             <div>
-              <label htmlFor="endTime" className="block text-sm font-medium text-gray-dark mb-1">
+              <label
+                htmlFor="endTime"
+                className="block text-sm font-medium text-gray-dark mb-1"
+              >
                 เวลาสิ้นสุด
               </label>
               <input
@@ -462,9 +494,12 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
               />
             </div>
           </div>
-          
+
           <div>
-            <label htmlFor="details" className="block text-sm font-medium text-gray-dark mb-1">
+            <label
+              htmlFor="details"
+              className="block text-sm font-medium text-gray-dark mb-1"
+            >
               รายละเอียดเพิ่มเติม
             </label>
             <textarea
@@ -477,6 +512,46 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
             ></textarea>
           </div>
         </div>
+      </Dialog>
+
+      {/* Error Modal */}
+      <Dialog
+        isOpen={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        title="เกิดข้อผิดพลาด"
+        actions={
+          <button
+            onClick={() => setShowErrorModal(false)}
+            className="px-4 py-2 bg-gray-medium text-white rounded-lg hover:bg-gray-dark transition-colors"
+          >
+            ปิด
+          </button>
+        }
+      >
+        <p className="text-gray-dark mb-4">{errorMessage}</p>
+      </Dialog>
+
+      {/* Success Modal */}
+      <Dialog
+        isOpen={showSuccessModal}
+        onClose={() => {
+          setShowSuccessModal(false);
+          router.push("/bookings");
+        }}
+        title="ยกเลิกสำเร็จ"
+        actions={
+          <button
+            onClick={() => {
+              setShowSuccessModal(false);
+              router.push("/bookings");
+            }}
+            className="px-4 py-2 bg-gray-medium text-white rounded-lg hover:bg-gray-dark transition-colors"
+          >
+            ปิด
+          </button>
+        }
+      >
+        <p className="text-gray-dark mb-4">ยกเลิกรายการสำเร็จแล้ว!</p>
       </Dialog>
     </div>
   );

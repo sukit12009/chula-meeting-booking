@@ -19,7 +19,8 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/api/") ||
     request.nextUrl.pathname.startsWith("/_next/") ||
     request.nextUrl.pathname.startsWith("/images/") ||
-    request.nextUrl.pathname.includes("favicon.ico");
+    request.nextUrl.pathname.includes("favicon.ico") ||
+    request.nextUrl.pathname.startsWith("/rooms"); // Allow access to rooms
 
   // ถ้าไม่มี token และไม่ได้อยู่ที่หน้า public หรือหน้า auth
   if (!token && !isAuthPage && !isPublicPath) {

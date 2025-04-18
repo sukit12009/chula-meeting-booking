@@ -93,7 +93,7 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-bold text-gray-dark mb-3">ตรวจสอบสถานะ</h3>
               <p className="text-gray-medium">
-                ตรวจสอบสถานะการจองได้ทันที พร้อมรับการแจ้งเตือนเมื่อการจองได้รับการอนุมัติ
+                ตรวจสอบสถานะการจองได้ทันที
               </p>
             </div>
             
