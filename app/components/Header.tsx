@@ -129,7 +129,7 @@ export default function Header() {
                 {/* Dropdown Menu */}
                 {showUserMenu && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-                    <Link
+                    {/* <Link
                       href="/profile"
                       className={`block px-4 py-2 text-sm text-gray-dark hover:bg-gray-light ${
                         isActive("/profile") ? "bg-gray-light" : ""
@@ -137,7 +137,7 @@ export default function Header() {
                       onClick={() => setShowUserMenu(false)}
                     >
                       โปรไฟล์
-                    </Link>
+                    </Link> */}
                     <button
                       onClick={() => {
                         setShowUserMenu(false);
@@ -240,7 +240,7 @@ export default function Header() {
             
             {session?.user ? (
               <>
-                <Link
+                {/* <Link
                   href="/profile"
                   className={`block py-2 text-gray-dark hover:text-primary transition-colors relative ${
                     isActive("/profile") ? "text-primary font-medium" : ""
@@ -251,7 +251,7 @@ export default function Header() {
                   {isActive("/profile") && (
                     <span className="absolute bottom-0 left-0 w-full h-[2px] bg-pink-500 rounded-full"></span>
                   )}
-                </Link>
+                </Link> */}
                 <button
                   onClick={() => {
                     setShowMobileMenu(false);

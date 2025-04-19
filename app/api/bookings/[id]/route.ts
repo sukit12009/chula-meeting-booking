@@ -52,18 +52,18 @@ export async function GET(
     }
 
     // ตรวจสอบว่าผู้ใช้เป็นเจ้าของการจองหรือเป็น admin
-    const isOwnerOrAdmin = await isBookingOwnerOrAdmin(
-      params.id, 
-      session.user.id, 
-      session.user.role
-    );
+    // const isOwnerOrAdmin = await isBookingOwnerOrAdmin(
+    //   params.id, 
+    //   session.user.id, 
+    //   session.user.role
+    // );
 
-    if (!isOwnerOrAdmin) {
-      return NextResponse.json(
-        { error: "คุณไม่มีสิทธิ์เข้าถึงข้อมูลการจองนี้" },
-        { status: 403 }
-      );
-    }
+    // if (!isOwnerOrAdmin) {
+    //   return NextResponse.json(
+    //     { error: "คุณไม่มีสิทธิ์เข้าถึงข้อมูลการจองนี้" },
+    //     { status: 403 }
+    //   );
+    // }
 
     return NextResponse.json({
       ...booking.toObject(),
