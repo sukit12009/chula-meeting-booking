@@ -289,7 +289,7 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
                   <div className="flex space-x-2">
                     <button
                       onClick={() => setShowEditDialog(true)}
-                      className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                      className="px-3 py-1 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
                     >
                       แก้ไข
                     </button>
