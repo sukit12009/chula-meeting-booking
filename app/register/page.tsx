@@ -29,10 +29,9 @@ export default function Register() {
     const hasNumber = /\d/.test(password);
     const hasUpperCase = /[A-Z]/.test(password);
     const hasLowerCase = /[a-z]/.test(password);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
 
-    if (!(hasNumber && hasUpperCase && hasLowerCase && hasSpecialChar)) {
-      setError('รหัสผ่านต้องประกอบด้วยตัวเลข ตัวอักษรพิมพ์ใหญ่ ตัวอักษรพิมพ์เล็ก และอักขระพิเศษ');
+    if (!(hasNumber && hasUpperCase && hasLowerCase)) {
+      setError('รหัสผ่านต้องประกอบด้วยตัวเลข ตัวอักษรพิมพ์ใหญ่ และตัวอักษรพิมพ์เล็ก');
       return;
     }
 
