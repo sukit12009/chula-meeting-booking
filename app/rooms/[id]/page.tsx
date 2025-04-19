@@ -36,7 +36,7 @@ export default function RoomDetail({ params }: { params: { id: string } }) {
       try {
         setLoading(true);
         const response = await fetch(`/api/rooms/${params.id}`);
-        
+
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error("ไม่พบข้อมูลห้องประชุม");
@@ -44,7 +44,7 @@ export default function RoomDetail({ params }: { params: { id: string } }) {
             throw new Error("เกิดข้อผิดพลาดในการโหลดข้อมูล");
           }
         }
-        
+
         const data = await response.json();
         setRoom(data);
       } catch (err: any) {
@@ -56,17 +56,20 @@ export default function RoomDetail({ params }: { params: { id: string } }) {
     };
 
     // if (status === "authenticated") {
-      fetchRoom();
+    fetchRoom();
     // }
   }, [params.id, status]);
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="spinner mb-4"></div>
-          <p className="text-gray-dark">กำลังโหลด...</p>
-        </div>
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow container mx-auto px-4 py-8">
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        </main>
+        <Footer />
       </div>
     );
   }
@@ -74,7 +77,7 @@ export default function RoomDetail({ params }: { params: { id: string } }) {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
-      
+
       <main className="flex-grow container mx-auto px-4 py-8">
         <div className="flex items-center mb-6">
           <button
@@ -96,11 +99,10 @@ export default function RoomDetail({ params }: { params: { id: string } }) {
             ย้อนกลับ
           </button>
         </div>
-        
+
         {loading ? (
-          <div className="text-center py-12">
-            <div className="spinner mb-4"></div>
-            <p className="text-gray-dark">กำลังโหลดข้อมูล...</p>
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
           </div>
         ) : error ? (
           <div className="text-center py-12">
@@ -126,13 +128,13 @@ export default function RoomDetail({ params }: { params: { id: string } }) {
               <h1 className="text-3xl font-bold text-gray-dark mb-4">
                 {room.name}
               </h1>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                 <div>
                   <h2 className="text-xl font-semibold text-gray-dark mb-4">
                     รายละเอียดห้องประชุม
                   </h2>
-                  
+
                   <div className="space-y-4">
                     <div className="flex items-center text-gray-medium">
                       <svg
@@ -149,7 +151,7 @@ export default function RoomDetail({ params }: { params: { id: string } }) {
                       </svg>
                       <span>ความจุ {room.capacity} คน</span>
                     </div>
-                    
+
                     {room.description && (
                       <div>
                         <h3 className="text-lg font-medium text-gray-dark mb-2">
@@ -160,12 +162,12 @@ export default function RoomDetail({ params }: { params: { id: string } }) {
                     )}
                   </div>
                 </div>
-                
+
                 <div>
                   <h2 className="text-xl font-semibold text-gray-dark mb-4">
                     อุปกรณ์ที่มีให้บริการ
                   </h2>
-                  
+
                   <ul className="list-disc list-inside text-gray-medium space-y-2">
                     {room.equipment.map((item, index) => (
                       <li key={index}>{item}</li>
@@ -173,7 +175,7 @@ export default function RoomDetail({ params }: { params: { id: string } }) {
                   </ul>
                 </div>
               </div>
-              
+
               <div className="flex justify-center">
                 <Link
                   href={`/booking?roomId=${room._id}`}
@@ -186,8 +188,8 @@ export default function RoomDetail({ params }: { params: { id: string } }) {
           </div>
         ) : null}
       </main>
-      
+
       <Footer />
     </div>
   );
-} 
+}

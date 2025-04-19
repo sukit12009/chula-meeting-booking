@@ -44,6 +44,7 @@ interface Booking {
 export default function Dashboard() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookingsAll, setBookingsAll] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -60,10 +61,12 @@ export default function Dashboard() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [roomsResponse, bookingsResponse] = await Promise.all([
-          fetch("/api/rooms"),
-          fetch("/api/bookings"),
-        ]);
+        const [roomsResponse, bookingsResponse, bookingsAllResponse] =
+          await Promise.all([
+            fetch("/api/rooms"),
+            fetch("/api/bookings"),
+            fetch("/api/bookings/get-all"),
+          ]);
 
         if (!roomsResponse.ok || !bookingsResponse.ok) {
           throw new Error("Failed to fetch data");
@@ -71,9 +74,11 @@ export default function Dashboard() {
 
         const roomsData = await roomsResponse.json();
         const bookingsData = await bookingsResponse.json();
+        const bookingsAllData = await bookingsAllResponse.json();
 
         setRooms(roomsData);
         setBookings(bookingsData);
+        setBookingsAll(bookingsAllData);
       } catch (err) {
         setError("เกิดข้อผิดพลาดในการโหลดข้อมูล");
         console.error(err);
@@ -102,10 +107,14 @@ export default function Dashboard() {
     (booking) => booking.status === "confirmed"
   );
 
+  const confirmedBookingsAll = bookingsAll.filter(
+    (booking) => booking.status === "confirmed"
+  );
+
   // กรองการจองที่กำลังจะมาถึง (วันนี้และอนาคต)
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
+
   const upcomingBookings = confirmedBookings.filter((booking) => {
     const bookingDate = new Date(booking.date);
     bookingDate.setHours(0, 0, 0, 0);
@@ -116,11 +125,11 @@ export default function Dashboard() {
   upcomingBookings.sort((a, b) => {
     const dateA = new Date(a.date);
     const dateB = new Date(b.date);
-    
+
     if (dateA.getTime() !== dateB.getTime()) {
       return dateA.getTime() - dateB.getTime();
     }
-    
+
     return a.startTime.localeCompare(b.startTime);
   });
 
@@ -130,9 +139,8 @@ export default function Dashboard() {
   if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="spinner mb-4"></div>
-          <p className="text-gray-dark">กำลังโหลด...</p>
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
         </div>
       </div>
     );
@@ -153,9 +161,8 @@ export default function Dashboard() {
         </div>
 
         {loading ? (
-          <div className="text-center py-12">
-            <div className="spinner mb-4"></div>
-            <p className="text-gray-dark">กำลังโหลดข้อมูล...</p>
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
           </div>
         ) : error ? (
           <div className="text-center py-12">
@@ -175,7 +182,7 @@ export default function Dashboard() {
                 ปฏิทินการจอง
               </h2>
               <div className="h-[600px]">
-                <FullCalendarComponent bookings={confirmedBookings} />
+                <FullCalendarComponent bookings={confirmedBookingsAll} />
               </div>
             </div>
 
@@ -187,9 +194,7 @@ export default function Dashboard() {
 
               {nextBookings.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-medium">
-                    ไม่มีการจองที่กำลังจะมาถึง
-                  </p>
+                  <p className="text-gray-medium">ไม่มีการจองที่กำลังจะมาถึง</p>
                   <Link
                     href="/booking"
                     className="mt-4 inline-block px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"

@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
-import Link from 'next/link';
-import Image from 'next/image';
-import Dialog from '../components/Dialog';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import Link from "next/link";
+import Image from "next/image";
+import Dialog from "../components/Dialog";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
 
 interface Room {
   _id: string;
@@ -20,17 +20,20 @@ interface Room {
 export default function Booking() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
-  const [title, setTitle] = useState('');
-  const [date, setDate] = useState('');
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
-  const [details, setDetails] = useState('');
+  const [title, setTitle] = useState("");
+  const [date, setDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [details, setDetails] = useState("");
+  const [snacksCount, setSnacksCount] = useState(0);
+  const [drinksCount, setDrinksCount] = useState(0);
+  const [setBoxCount, setSetBoxCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  
+
   const router = useRouter();
   const { data: session, status } = useSession();
 
@@ -46,11 +49,11 @@ export default function Booking() {
       try {
         setLoading(true);
         const response = await fetch("/api/rooms");
-        
+
         if (!response.ok) {
           throw new Error("Failed to fetch rooms");
         }
-        
+
         const data = await response.json();
         setRooms(data);
       } catch (err) {
@@ -68,12 +71,12 @@ export default function Booking() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!selectedRoom) {
       setError("กรุณาเลือกห้องประชุม");
       return;
     }
-    
+
     // แสดง dialog ยืนยันการจอง
     setShowConfirmDialog(true);
   };
@@ -82,30 +85,37 @@ export default function Booking() {
     try {
       setSubmitting(true);
       setError("");
-      
+
+      const bookingData = {
+        roomId: selectedRoom?._id,
+        title,
+        date,
+        startTime,
+        endTime,
+        details,
+        snacksCount,
+        drinksCount,
+        setBoxCount,
+      };
+
+      console.log("Sending booking data:", bookingData);
+
       const response = await fetch("/api/bookings", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          roomId: selectedRoom?._id,
-          title,
-          date,
-          startTime,
-          endTime,
-          details,
-        }),
+        body: JSON.stringify(bookingData),
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || "เกิดข้อผิดพลาดในการจองห้อง");
       }
-      
+
       setSuccess(true);
-      
+
       // รีเซ็ตฟอร์ม
       setSelectedRoom(null);
       setTitle("");
@@ -113,10 +123,13 @@ export default function Booking() {
       setStartTime("");
       setEndTime("");
       setDetails("");
-      
+      setSnacksCount(0);
+      setDrinksCount(0);
+      setSetBoxCount(0);
+
       // ปิด dialog
       setShowConfirmDialog(false);
-      
+
       // นำทางไปยังหน้ารายการจอง
       setTimeout(() => {
         router.push("/bookings");
@@ -132,14 +145,15 @@ export default function Booking() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
-      
+
       <main className="flex-grow container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-gray-dark mb-6">จองห้องประชุม</h1>
-        
+        <h1 className="text-2xl font-bold text-gray-dark mb-6">
+          จองห้องประชุม
+        </h1>
+
         {loading ? (
-          <div className="text-center py-12">
-            <div className="spinner mb-4"></div>
-            <p className="text-gray-dark">กำลังโหลดข้อมูล...</p>
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
           </div>
         ) : error && !success ? (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
@@ -153,7 +167,9 @@ export default function Booking() {
           <>
             {/* เลือกห้อง */}
             <div className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-dark mb-4">เลือกห้องประชุม</h2>
+              <h2 className="text-xl font-semibold text-gray-dark mb-4">
+                เลือกห้องประชุม
+              </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {rooms.map((room) => (
                   <div
@@ -170,7 +186,7 @@ export default function Booking() {
                         src={room.image}
                         alt={room.name}
                         fill
-                        style={{ objectFit: 'cover' }}
+                        style={{ objectFit: "cover" }}
                       />
                     </div>
                     <div className="p-4">
@@ -274,7 +290,7 @@ export default function Booking() {
                     </div>
                   </div>
 
-                  <div className="mb-6">
+                  <div className="mb-4">
                     <label
                       htmlFor="details"
                       className="block text-sm font-medium text-gray-dark mb-1"
@@ -288,6 +304,65 @@ export default function Booking() {
                       rows={4}
                       className="w-full px-4 py-2 border border-gray-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     ></textarea>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div>
+                      <label
+                        htmlFor="snacksCount"
+                        className="block text-sm font-medium text-gray-dark mb-1"
+                      >
+                        จำนวนของว่าง
+                      </label>
+                      <input
+                        type="number"
+                        id="snacksCount"
+                        value={snacksCount}
+                        onChange={(e) =>
+                          setSnacksCount(parseInt(e.target.value) || 0)
+                        }
+                        min="0"
+                        className="w-full px-4 py-2 border border-gray-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="drinksCount"
+                        className="block text-sm font-medium text-gray-dark mb-1"
+                      >
+                        จำนวนเครื่องดื่ม
+                      </label>
+                      <input
+                        type="number"
+                        id="drinksCount"
+                        value={drinksCount}
+                        onChange={(e) =>
+                          setDrinksCount(parseInt(e.target.value) || 0)
+                        }
+                        min="0"
+                        className="w-full px-4 py-2 border border-gray-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="setBoxCount"
+                        className="block text-sm font-medium text-gray-dark mb-1"
+                      >
+                        จำนวน Set box
+                      </label>
+                      <input
+                        type="number"
+                        id="setBoxCount"
+                        value={setBoxCount}
+                        onChange={(e) =>
+                          setSetBoxCount(parseInt(e.target.value) || 0)
+                        }
+                        min="0"
+                        className="w-full px-4 py-2 border border-gray-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
                   </div>
 
                   <div className="flex justify-end">
@@ -332,14 +407,21 @@ export default function Booking() {
           </>
         }
       >
-        <p className="text-gray-dark mb-4">คุณต้องการจองห้องประชุมนี้ใช่หรือไม่?</p>
+        <p className="text-gray-dark mb-4">
+          คุณต้องการจองห้องประชุมนี้ใช่หรือไม่?
+        </p>
         <div className="bg-gray-50 p-4 rounded-lg">
           <p className="font-medium">ห้อง: {selectedRoom?.name}</p>
           <p>วันที่: {date}</p>
-          <p>เวลา: {startTime} - {endTime} น.</p>
+          <p>
+            เวลา: {startTime} - {endTime} น.
+          </p>
           <p>หัวข้อ: {title}</p>
+          {snacksCount > 0 && <p>จำนวนของว่าง: {snacksCount}</p>}
+          {drinksCount > 0 && <p>จำนวนเครื่องดื่ม: {drinksCount}</p>}
+          {setBoxCount > 0 && <p>จำนวน Set box: {setBoxCount}</p>}
         </div>
       </Dialog>
     </div>
   );
-} 
+}

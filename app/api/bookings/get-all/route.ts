@@ -1,37 +1,30 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import connectDB from "@/app/lib/mongodb";
 import Booking from "@/app/models/Booking";
 import Room from "@/app/models/Room";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "../../auth/[...nextauth]/route";
 
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session) {
       return NextResponse.json(
         { error: "กรุณาเข้าสู่ระบบก่อนเข้าถึงข้อมูล" },
         { status: 401 }
       );
     }
-    
+
     await connectDB();
-    
-    // ถ้าเป็น admin ให้ดึงข้อมูลทั้งหมด
-    // ถ้าเป็น user ให้ดึงเฉพาะข้อมูลของตัวเอง
+
+    // ดึงข้อมูลทั้งหมด
     let bookings;
-    if (session.user.role === 'admin') {
-      bookings = await Booking.find({})
-        .populate("roomId", "name capacity equipment image")
-        .populate("userId", "name email");
-    } else {
-      bookings = await Booking.find({ userId: session.user.id })
-        .populate("roomId", "name capacity equipment image")
-        .populate("userId", "name email");
-    }
-    
+    bookings = await Booking.find({})
+      .populate("roomId", "name capacity equipment image")
+      .populate("userId", "name email");
+
     return NextResponse.json(bookings);
   } catch (error: any) {
     console.error("Error fetching bookings:", error);
@@ -45,22 +38,20 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session) {
       return NextResponse.json(
         { error: "กรุณาเข้าสู่ระบบก่อนทำการจอง" },
         { status: 401 }
       );
     }
-    
+
     await connectDB();
     const body = await request.json();
-    
-    console.log("Received booking data:", body); // เพิ่ม log เพื่อตรวจสอบข้อมูลที่ได้รับ
-    
+
     // แปลง roomId เป็น ObjectId
     let roomObjectId;
-    if (typeof body.roomId === 'number') {
+    if (typeof body.roomId === "number") {
       // ถ้าเป็นตัวเลข (ID เดิม) ให้ค้นหาห้องจาก index
       const room = await Room.findOne().skip(body.roomId - 1);
       if (!room) {
@@ -79,50 +70,45 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    
+
     // ตรวจสอบการจองซ้ำ
     const conflictBooking = await Booking.findOne({
       roomId: roomObjectId,
       date: body.date,
       status: "confirmed",
       $or: [
-        { startTime: { $lte: body.startTime }, endTime: { $gt: body.startTime } },
+        {
+          startTime: { $lte: body.startTime },
+          endTime: { $gt: body.startTime },
+        },
         { startTime: { $lt: body.endTime }, endTime: { $gte: body.endTime } },
-        { startTime: { $gte: body.startTime }, endTime: { $lte: body.endTime } }
-      ]
+        {
+          startTime: { $gte: body.startTime },
+          endTime: { $lte: body.endTime },
+        },
+      ],
     });
-    
+
     if (conflictBooking) {
       return NextResponse.json(
         { error: "ห้องนี้ถูกจองในช่วงเวลาดังกล่าวแล้ว" },
         { status: 409 }
       );
     }
-    
-    // สร้างการจองใหม่ พร้อมข้อมูลของว่าง, เครื่องดื่ม, และ Set box
-    const bookingData = {
+
+    // สร้างการจองใหม่
+    const newBooking = await Booking.create({
+      ...body,
       roomId: roomObjectId,
       userId: session.user.id,
-      title: body.title,
-      date: body.date,
-      startTime: body.startTime,
-      endTime: body.endTime,
-      details: body.details,
-      snacksCount: body.snacksCount || 0,
-      drinksCount: body.drinksCount || 0,
-      setBoxCount: body.setBoxCount || 0,
-      status: "confirmed"
-    };
-    
-    console.log("Creating booking with data:", bookingData); // เพิ่ม log เพื่อตรวจสอบข้อมูลที่จะบันทึก
-    
-    const newBooking = await Booking.create(bookingData);
-    
+      status: "confirmed",
+    });
+
     // ดึงข้อมูลเพิ่มเติมเพื่อส่งกลับ
     const populatedBooking = await Booking.findById(newBooking._id)
       .populate("roomId", "name capacity equipment image")
       .populate("userId", "name email");
-    
+
     return NextResponse.json(populatedBooking, { status: 201 });
   } catch (error: any) {
     console.error("Error creating booking:", error);
@@ -131,4 +117,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-} 
+}

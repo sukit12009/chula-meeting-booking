@@ -1,6 +1,22 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
 
-const BookingSchema = new Schema(
+interface Booking extends Document {
+  roomId: mongoose.Schema.Types.ObjectId;
+  userId: mongoose.Schema.Types.ObjectId;
+  title: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  details: string;
+  status: 'confirmed' | 'cancelled';
+  snacksCount: number;
+  drinksCount: number;
+  setBoxCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const BookingSchema = new Schema<Booking>(
   {
     roomId: {
       type: Schema.Types.ObjectId,
@@ -35,8 +51,20 @@ const BookingSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "confirmed", "cancelled"],
-      default: "pending",
+      enum: ["confirmed", "cancelled"],
+      default: "confirmed",
+    },
+    snacksCount: {
+      type: Number,
+      default: 0,
+    },
+    drinksCount: {
+      type: Number,
+      default: 0,
+    },
+    setBoxCount: {
+      type: Number,
+      default: 0,
     },
   },
   {
@@ -45,6 +73,6 @@ const BookingSchema = new Schema(
 );
 
 // ตรวจสอบว่ามีการสร้างโมเดลแล้วหรือไม่
-const Booking = mongoose.models.Booking || mongoose.model("Booking", BookingSchema);
+const Booking = mongoose.models.Booking || mongoose.model<Booking>("Booking", BookingSchema);
 
 export default Booking; 

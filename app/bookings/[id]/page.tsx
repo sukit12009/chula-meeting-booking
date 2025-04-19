@@ -33,6 +33,9 @@ interface Booking {
   details: string;
   status: "confirmed" | "cancelled";
   isOwner: boolean;
+  snacksCount: number;
+  drinksCount: number;
+  setBoxCount: number;
 }
 
 export default function BookingDetail({ params }: { params: { id: string } }) {
@@ -50,6 +53,9 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
     startTime: "",
     endTime: "",
     details: "",
+    snacksCount: 0,
+    drinksCount: 0,
+    setBoxCount: 0,
   });
   const [updating, setUpdating] = useState(false);
 
@@ -57,6 +63,8 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
   const [errorMessage, setErrorMessage] = useState("");
 
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  // เพิ่ม state สำหรับ modal แจ้งผลการแก้ไขสำเร็จ
+  const [showEditSuccessModal, setShowEditSuccessModal] = useState(false);
 
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -92,6 +100,9 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
           startTime: data.startTime,
           endTime: data.endTime,
           details: data.details || "",
+          snacksCount: data.snacksCount || 0,
+          drinksCount: data.drinksCount || 0,
+          setBoxCount: data.setBoxCount || 0,
         });
       } catch (err: any) {
         setError(err.message);
@@ -141,13 +152,22 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setEditFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    
+    // สำหรับฟิลด์ที่เป็นตัวเลข
+    if (name === 'snacksCount' || name === 'drinksCount' || name === 'setBoxCount') {
+      setEditFormData({
+        ...editFormData,
+        [name]: parseInt(value) || 0,
+      });
+    } else {
+      setEditFormData({
+        ...editFormData,
+        [name]: value,
+      });
+    }
   };
 
-  const handleEditSubmit = async () => {
+  const handleUpdate = async () => {
     try {
       setUpdating(true);
 
@@ -156,27 +176,37 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(editFormData),
+        body: JSON.stringify({
+          title: editFormData.title,
+          date: editFormData.date,
+          startTime: editFormData.startTime,
+          endTime: editFormData.endTime,
+          details: editFormData.details,
+          snacksCount: editFormData.snacksCount,
+          drinksCount: editFormData.drinksCount,
+          setBoxCount: editFormData.setBoxCount,
+        }),
       });
 
       if (!response.ok) {
         const data = await response.json();
-        setErrorMessage(data.error || "เกิดข้อผิดพลาดในการอัพเดทข้อมูล");
-        setShowEditDialog(false);
-        setShowErrorModal(true);
-      } else {
-        // อัพเดทข้อมูลการจอง
-        const updatedData = await response.json();
-        setBooking(updatedData.booking);
-
-        // แสดง modal สำเร็จ
-        setShowSuccessModal(true);
-
-        // ปิด dialog
-        setShowEditDialog(false);
+        throw new Error(data.error || "เกิดข้อผิดพลาดในการอัปเดตการจอง");
       }
+
+      // อัพเดทข้อมูลการจอง
+      const updatedBooking = await response.json();
+      
+      // เพิ่มข้อมูล isOwner เพื่อให้ปุ่มแก้ไขและยกเลิกยังคงแสดง
+      updatedBooking.isOwner = true;
+      
+      setBooking(updatedBooking);
+      setShowEditDialog(false);
+      
+      // แสดง modal สำเร็จ
+      setShowEditSuccessModal(true);
     } catch (err: any) {
-      console.error(err);
+      setErrorMessage(err.message);
+      setShowErrorModal(true);
     } finally {
       setUpdating(false);
     }
@@ -191,175 +221,157 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
     return new Date(dateString).toLocaleDateString("th-TH", options);
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow container mx-auto px-4 py-8">
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow container mx-auto px-4 py-8">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            <p>{error}</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!booking) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow container mx-auto px-4 py-8">
+          <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg">
+            <p>ไม่พบข้อมูลการจอง</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col">
       <Header />
 
       <main className="flex-grow container mx-auto px-4 py-8">
-        <div className="flex items-center mb-6">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center text-gray-dark hover:text-primary transition-colors"
-          >
-            <svg
-              className="w-5 h-5 mr-1"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-            ย้อนกลับ
-          </button>
-        </div>
-
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="spinner mb-4"></div>
-            <p className="text-gray-dark">กำลังโหลดข้อมูล...</p>
-          </div>
-        ) : error ? (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-            <p>{error}</p>
-            <button
-              onClick={() => router.back()}
-              className="mt-2 text-red-700 underline"
-            >
-              กลับไปยังหน้ารายการจอง
-            </button>
-          </div>
-        ) : booking ? (
-          <div className="bg-white rounded-lg shadow-card overflow-hidden">
-            {/* Room Image */}
-            <div className="h-64 relative">
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="md:flex">
+            <div className="md:w-1/3 relative h-64 md:h-auto">
               <Image
-                src={booking.roomId.image}
+                src={booking.roomId.image || "/images/room-placeholder.jpg"}
                 alt={booking.roomId.name}
                 fill
-                style={{ objectFit: "cover" }}
+                className="object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-              <div className="absolute bottom-0 left-0 p-6 text-white">
-                <h1 className="text-2xl font-bold mb-1">{booking.title}</h1>
-                <p className="text-lg">{booking.roomId.name}</p>
-              </div>
-
-              {/* Status Badge */}
-              <div className="absolute top-4 right-4">
-                <span
-                  className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    booking.status === "confirmed"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-red-100 text-red-800"
-                  }`}
-                >
-                  {booking.status === "confirmed" ? "ยืนยันแล้ว" : "ยกเลิกแล้ว"}
-                </span>
-              </div>
             </div>
 
-            {/* Booking Details */}
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-dark mb-4">
-                    รายละเอียดการจอง
-                  </h2>
+            <div className="p-6 md:w-2/3">
+              <div className="flex justify-between items-start mb-4">
+                <h1 className="text-2xl font-bold text-gray-dark">
+                  {booking.title}
+                </h1>
 
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-gray-medium text-sm">วันที่</p>
-                      <p className="text-gray-dark">
-                        {formatDate(booking.date)}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-gray-medium text-sm">เวลา</p>
-                      <p className="text-gray-dark">
-                        {booking.startTime} - {booking.endTime} น.
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-gray-medium text-sm">ผู้จอง</p>
-                      <p className="text-gray-dark">{booking.userId.name}</p>
-                    </div>
-
-                    <div>
-                      <p className="text-gray-medium text-sm">อีเมล</p>
-                      <p className="text-gray-dark">{booking.userId.email}</p>
-                    </div>
-
-                    {booking.details && (
-                      <div>
-                        <p className="text-gray-medium text-sm">
-                          รายละเอียดเพิ่มเติม
-                        </p>
-                        <p className="text-gray-dark whitespace-pre-line">
-                          {booking.details}
-                        </p>
-                      </div>
-                    )}
+                {booking.status === "confirmed" && booking.isOwner && (
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => setShowEditDialog(true)}
+                      className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                    >
+                      แก้ไข
+                    </button>
+                    <button
+                      onClick={() => setShowCancelDialog(true)}
+                      className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                    >
+                      ยกเลิก
+                    </button>
                   </div>
-                </div>
+                )}
 
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-dark mb-4">
-                    ข้อมูลห้องประชุม
-                  </h2>
+                {booking.status === "cancelled" && (
+                  <span className="px-3 py-1 bg-red-100 text-red-800 rounded-lg">
+                    ยกเลิกแล้ว
+                  </span>
+                )}
+              </div>
 
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-gray-medium text-sm">ชื่อห้อง</p>
-                      <p className="text-gray-dark">{booking.roomId.name}</p>
-                    </div>
-
-                    <div>
-                      <p className="text-gray-medium text-sm">ความจุ</p>
-                      <p className="text-gray-dark">
-                        {booking.roomId.capacity} คน
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-gray-medium text-sm">อุปกรณ์</p>
-                      <ul className="list-disc list-inside text-gray-dark">
-                        {booking.roomId.equipment?.map((item, index) => (
-                          <li key={index}>{item}</li>
-                        ))}
-                      </ul>
-                    </div>
+              <div className="mb-6">
+                <h2 className="text-xl font-semibold text-gray-dark mb-2">
+                  รายละเอียดการจอง
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-gray-medium">
+                      <span className="font-medium">ห้อง:</span>{" "}
+                      {booking.roomId.name}
+                    </p>
+                    <p className="text-gray-medium">
+                      <span className="font-medium">วันที่:</span>{" "}
+                      {formatDate(booking.date)}
+                    </p>
+                    <p className="text-gray-medium">
+                      <span className="font-medium">เวลา:</span> {booking.startTime} -{" "}
+                      {booking.endTime} น.
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-medium">
+                      <span className="font-medium">ผู้จอง:</span>{" "}
+                      {booking.userId.name}
+                    </p>
+                    <p className="text-gray-medium">
+                      <span className="font-medium">อีเมล:</span>{" "}
+                      {booking.userId.email}
+                    </p>
                   </div>
                 </div>
               </div>
 
-              {/* Actions */}
-              {booking.status === "confirmed" && booking.isOwner && (
-                <div className="mt-8 flex justify-end space-x-4">
-                  <button
-                    onClick={() => setShowEditDialog(true)}
-                    className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
-                  >
-                    แก้ไขการจอง
-                  </button>
-                  <button
-                    onClick={() => setShowCancelDialog(true)}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                  >
-                    ยกเลิกการจอง
-                  </button>
+              {booking.details && (
+                <div className="mb-6">
+                  <h2 className="text-xl font-semibold text-gray-dark mb-2">
+                    รายละเอียดเพิ่มเติม
+                  </h2>
+                  <p className="text-gray-medium whitespace-pre-line">
+                    {booking.details}
+                  </p>
                 </div>
               )}
+
+              <div className="mt-4">
+                <h3 className="text-lg font-medium text-gray-dark mb-2">รายละเอียดอาหารและเครื่องดื่ม</h3>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  {booking.snacksCount > 0 && (
+                    <p className="mb-2">จำนวนของว่าง: {booking.snacksCount}</p>
+                  )}
+                  {booking.drinksCount > 0 && (
+                    <p className="mb-2">จำนวนเครื่องดื่ม: {booking.drinksCount}</p>
+                  )}
+                  {booking.setBoxCount > 0 && (
+                    <p className="mb-2">จำนวน Set box: {booking.setBoxCount}</p>
+                  )}
+                  {booking.snacksCount === 0 && booking.drinksCount === 0 && booking.setBoxCount === 0 && (
+                    <p className="text-gray-medium">ไม่มีรายการอาหารและเครื่องดื่ม</p>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-        ) : null}
+        </div>
       </main>
 
       <Footer />
@@ -368,7 +380,7 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
       <Dialog
         isOpen={showCancelDialog}
         onClose={() => setShowCancelDialog(false)}
-        title="ยืนยันการยกเลิกการจอง"
+        title="ยืนยันการยกเลิก"
         actions={
           <>
             <button
@@ -376,11 +388,11 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
               className="px-4 py-2 bg-gray-medium text-white rounded-lg hover:bg-gray-dark transition-colors"
               disabled={cancelling}
             >
-              ไม่ยกเลิก
+              ไม่
             </button>
             <button
               onClick={handleCancel}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
               disabled={cancelling}
             >
               {cancelling ? "กำลังยกเลิก..." : "ยืนยันการยกเลิก"}
@@ -388,34 +400,31 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
           </>
         }
       >
+        <p className="text-gray-dark mb-4">คุณต้องการยกเลิกการจองนี้ใช่หรือไม่?</p>
         <p className="text-gray-dark mb-4">
-          คุณต้องการยกเลิกการจองห้องประชุมนี้ใช่หรือไม่?
-        </p>
-        <p className="text-red-600 text-sm">
-          หมายเหตุ: การยกเลิกไม่สามารถเปลี่ยนกลับได้
+          การยกเลิกจะไม่สามารถเรียกคืนได้
         </p>
       </Dialog>
 
-      {/* Edit Booking Dialog */}
+      {/* Edit Dialog */}
       <Dialog
         isOpen={showEditDialog}
         onClose={() => setShowEditDialog(false)}
-        title="แก้ไขรายละเอียดการจอง"
+        title="แก้ไขการจอง"
         actions={
           <>
             <button
               onClick={() => setShowEditDialog(false)}
               className="px-4 py-2 bg-gray-medium text-white rounded-lg hover:bg-gray-dark transition-colors"
-              disabled={updating}
             >
               ยกเลิก
             </button>
             <button
-              onClick={handleEditSubmit}
+              onClick={handleUpdate}
               className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
               disabled={updating}
             >
-              {updating ? "กำลังบันทึก..." : "บันทึกการเปลี่ยนแปลง"}
+              {updating ? "กำลังบันทึก..." : "บันทึก"}
             </button>
           </>
         }
@@ -511,6 +520,62 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
               className="w-full px-3 py-2 border border-gray-light rounded-md focus:outline-none focus:ring-primary focus:border-primary"
             ></textarea>
           </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label
+                htmlFor="snacksCount"
+                className="block text-sm font-medium text-gray-dark mb-1"
+              >
+                จำนวนของว่าง
+              </label>
+              <input
+                type="number"
+                id="snacksCount"
+                name="snacksCount"
+                value={editFormData.snacksCount}
+                onChange={handleEditChange}
+                min="0"
+                className="w-full px-3 py-2 border border-gray-light rounded-md focus:outline-none focus:ring-primary focus:border-primary"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="drinksCount"
+                className="block text-sm font-medium text-gray-dark mb-1"
+              >
+                จำนวนเครื่องดื่ม
+              </label>
+              <input
+                type="number"
+                id="drinksCount"
+                name="drinksCount"
+                value={editFormData.drinksCount}
+                onChange={handleEditChange}
+                min="0"
+                className="w-full px-3 py-2 border border-gray-light rounded-md focus:outline-none focus:ring-primary focus:border-primary"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="setBoxCount"
+                className="block text-sm font-medium text-gray-dark mb-1"
+              >
+                จำนวน Set box
+              </label>
+              <input
+                type="number"
+                id="setBoxCount"
+                name="setBoxCount"
+                value={editFormData.setBoxCount}
+                onChange={handleEditChange}
+                min="0"
+                className="w-full px-3 py-2 border border-gray-light rounded-md focus:outline-none focus:ring-primary focus:border-primary"
+              />
+            </div>
+          </div>
         </div>
       </Dialog>
 
@@ -531,7 +596,7 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
         <p className="text-gray-dark mb-4">{errorMessage}</p>
       </Dialog>
 
-      {/* Success Modal */}
+      {/* Success Modal for Cancel */}
       <Dialog
         isOpen={showSuccessModal}
         onClose={() => {
@@ -552,6 +617,23 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
         }
       >
         <p className="text-gray-dark mb-4">ยกเลิกรายการสำเร็จแล้ว!</p>
+      </Dialog>
+
+      {/* Success Modal for Edit */}
+      <Dialog
+        isOpen={showEditSuccessModal}
+        onClose={() => setShowEditSuccessModal(false)}
+        title="แก้ไขสำเร็จ"
+        actions={
+          <button
+            onClick={() => setShowEditSuccessModal(false)}
+            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
+          >
+            ตกลง
+          </button>
+        }
+      >
+        <p className="text-gray-dark mb-4">แก้ไขรายละเอียดการจองเรียบร้อยแล้ว</p>
       </Dialog>
     </div>
   );

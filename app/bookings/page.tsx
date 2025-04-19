@@ -41,11 +41,13 @@ export default function BookingsList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
+  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(
+    null
+  );
   const [dateFilter, setDateFilter] = useState("");
   const [roomFilter, setRoomFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  
+
   const router = useRouter();
   const { data: session, status } = useSession();
 
@@ -89,24 +91,26 @@ export default function BookingsList() {
 
   const handleCancelBooking = async () => {
     if (!selectedBookingId) return;
-    
+
     try {
       const response = await fetch(`/api/bookings/${selectedBookingId}`, {
         method: "DELETE",
       });
-      
+
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || "เกิดข้อผิดพลาดในการยกเลิกการจอง");
       }
-      
+
       // อัพเดทสถานะการจองในรายการ
-      setBookings(bookings.map(booking => 
-        booking._id === selectedBookingId 
-          ? { ...booking, status: "cancelled" } 
-          : booking
-      ));
-      
+      setBookings(
+        bookings.map((booking) =>
+          booking._id === selectedBookingId
+            ? { ...booking, status: "cancelled" }
+            : booking
+        )
+      );
+
       // ปิด dialog
       setShowCancelDialog(false);
     } catch (err: any) {
@@ -125,36 +129,37 @@ export default function BookingsList() {
   };
 
   // กรองข้อมูลการจอง
-  const filteredBookings = bookings.filter(booking => {
+  const filteredBookings = bookings.filter((booking) => {
     // กรองตามวันที่
     if (dateFilter && booking.date !== dateFilter) {
       return false;
     }
-    
+
     // กรองตามห้อง
     if (roomFilter && booking.roomId._id !== roomFilter) {
       return false;
     }
-    
+
     // กรองตามสถานะ
     if (statusFilter && booking.status !== statusFilter) {
       return false;
     }
-    
+
     return true;
   });
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
-      
+
       <main className="flex-grow container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-gray-dark mb-6">รายการจองห้องประชุม</h1>
-        
+        <h1 className="text-2xl font-bold text-gray-dark mb-6">
+          รายการจองห้องประชุม
+        </h1>
+
         {loading ? (
-          <div className="text-center py-12">
-            <div className="spinner mb-4"></div>
-            <p className="text-gray-dark">กำลังโหลดข้อมูล...</p>
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
           </div>
         ) : error ? (
           <div className="text-center py-12 bg-white rounded-lg shadow-card">
@@ -171,7 +176,10 @@ export default function BookingsList() {
             {/* ส่วนกรองข้อมูล */}
             <div className="flex flex-col md:flex-row gap-4 mb-6">
               <div className="flex-1">
-                <label htmlFor="dateFilter" className="block text-sm font-medium text-gray-dark mb-1">
+                <label
+                  htmlFor="dateFilter"
+                  className="block text-sm font-medium text-gray-dark mb-1"
+                >
                   กรองตามวันที่
                 </label>
                 <input
@@ -183,9 +191,12 @@ export default function BookingsList() {
                   className="w-full px-4 py-2 border border-gray-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
-              
+
               <div className="flex-1">
-                <label htmlFor="roomFilter" className="block text-sm font-medium text-gray-dark mb-1">
+                <label
+                  htmlFor="roomFilter"
+                  className="block text-sm font-medium text-gray-dark mb-1"
+                >
                   กรองตามห้อง
                 </label>
                 <select
@@ -202,9 +213,12 @@ export default function BookingsList() {
                   ))}
                 </select>
               </div>
-              
+
               <div className="flex-1">
-                <label htmlFor="statusFilter" className="block text-sm font-medium text-gray-dark mb-1">
+                <label
+                  htmlFor="statusFilter"
+                  className="block text-sm font-medium text-gray-dark mb-1"
+                >
                   กรองตามสถานะ
                 </label>
                 <select
@@ -299,9 +313,9 @@ export default function BookingsList() {
           </>
         )}
       </main>
-      
+
       <Footer />
-      
+
       {/* Cancel Confirmation Dialog */}
       <Dialog
         isOpen={showCancelDialog}
@@ -333,4 +347,4 @@ export default function BookingsList() {
       </Dialog>
     </div>
   );
-} 
+}

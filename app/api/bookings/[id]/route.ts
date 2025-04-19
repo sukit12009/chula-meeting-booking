@@ -84,118 +84,102 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    await connectDB();
-    
-    // ตรวจสอบการเข้าสู่ระบบ
     const session = await getServerSession(authOptions);
+    
     if (!session) {
       return NextResponse.json(
-        { error: "กรุณาเข้าสู่ระบบ" },
+        { error: "กรุณาเข้าสู่ระบบก่อนแก้ไขการจอง" },
         { status: 401 }
       );
     }
     
-    // ดึงข้อมูลจาก request
-    const { title, date, startTime, endTime, details } = await request.json();
-    
-    // ตรวจสอบข้อมูลที่จำเป็น
-    if (!title || !date || !startTime || !endTime) {
+    await connectDB();
+
+    if (!mongoose.isValidObjectId(params.id)) {
       return NextResponse.json(
-        { error: "กรุณากรอกข้อมูลให้ครบถ้วน" },
+        { error: "รูปแบบ ID ไม่ถูกต้อง" },
         { status: 400 }
       );
     }
-    
-    // ค้นหาการจองที่ต้องการแก้ไข
-    const booking = await Booking.findById(params.id)
-      .populate("roomId")
-      .populate("userId");
-    
-    if (!booking) {
-      return NextResponse.json(
-        { error: "ไม่พบข้อมูลการจอง" },
-        { status: 404 }
-      );
-    }
-    
-    // ตรวจสอบว่าผู้ใช้เป็นเจ้าของการจองหรือไม่
-    if (booking.userId._id.toString() !== session.user.id) {
+
+    // ตรวจสอบว่าผู้ใช้เป็นเจ้าของการจองหรือเป็น admin
+    const isOwnerOrAdmin = await isBookingOwnerOrAdmin(
+      params.id, 
+      session.user.id, 
+      session.user.role
+    );
+
+    if (!isOwnerOrAdmin) {
       return NextResponse.json(
         { error: "คุณไม่มีสิทธิ์แก้ไขการจองนี้" },
         { status: 403 }
       );
     }
+
+    const body = await request.json();
+    console.log("Received update data:", body); // เพิ่ม log เพื่อตรวจสอบข้อมูลที่ได้รับ
     
-    // ตรวจสอบว่าการจองถูกยกเลิกไปแล้วหรือไม่
-    if (booking.status === "cancelled") {
+    // ตรวจสอบการจองซ้ำ (ยกเว้นการจองปัจจุบัน)
+    const booking = await Booking.findById(params.id);
+    if (!booking) {
       return NextResponse.json(
-        { error: "ไม่สามารถแก้ไขการจองที่ถูกยกเลิกแล้ว" },
-        { status: 400 }
+        { error: "ไม่พบรายการจองที่ต้องการแก้ไข" },
+        { status: 404 }
       );
     }
-    
-    // ตรวจสอบว่าเวลาที่ต้องการแก้ไขไม่ซ้ำกับการจองอื่น
-    const formattedDate = new Date(date).toISOString().split('T')[0];
-    
-    // ค้นหาการจองอื่นในวันและเวลาเดียวกัน (ยกเว้นการจองปัจจุบัน)
-    const conflictBookings = await Booking.find({
-      _id: { $ne: params.id },
-      roomId: booking.roomId._id,
-      date: formattedDate,
+
+    const conflictBooking = await Booking.findOne({
+      _id: { $ne: params.id }, // ไม่รวมการจองปัจจุบัน
+      roomId: booking.roomId,
+      date: body.date,
       status: "confirmed",
       $or: [
-        {
-          // กรณีที่เวลาเริ่มต้นอยู่ระหว่างการจองอื่น
-          startTime: { $lte: startTime },
-          endTime: { $gt: startTime }
-        },
-        {
-          // กรณีที่เวลาสิ้นสุดอยู่ระหว่างการจองอื่น
-          startTime: { $lt: endTime },
-          endTime: { $gte: endTime }
-        },
-        {
-          // กรณีที่การจองอื่นอยู่ระหว่างเวลาที่ต้องการจอง
-          startTime: { $gte: startTime },
-          endTime: { $lte: endTime }
-        }
+        { startTime: { $lte: body.startTime }, endTime: { $gt: body.startTime } },
+        { startTime: { $lt: body.endTime }, endTime: { $gte: body.endTime } },
+        { startTime: { $gte: body.startTime }, endTime: { $lte: body.endTime } }
       ]
     });
     
-    if (conflictBookings.length > 0) {
+    if (conflictBooking) {
       return NextResponse.json(
-        { error: "ห้องประชุมถูกจองในช่วงเวลาดังกล่าวแล้ว" },
+        { error: "ห้องนี้ถูกจองในช่วงเวลาดังกล่าวแล้ว" },
         { status: 409 }
       );
     }
+
+    // อัปเดตข้อมูลการจอง
+    const updateData = {
+      title: body.title,
+      date: body.date,
+      startTime: body.startTime,
+      endTime: body.endTime,
+      details: body.details,
+      snacksCount: body.snacksCount || 0,
+      drinksCount: body.drinksCount || 0,
+      setBoxCount: body.setBoxCount || 0,
+    };
     
-    // อัพเดทข้อมูลการจอง
-    booking.title = title;
-    booking.date = formattedDate;
-    booking.startTime = startTime;
-    booking.endTime = endTime;
-    booking.details = details;
-    
-    await booking.save();
-    
-    // ดึงข้อมูลการจองที่อัพเดทแล้ว
-    const updatedBooking = await Booking.findById(params.id)
-      .populate("roomId")
-      .populate("userId");
-    
-    // เพิ่มข้อมูลว่าผู้ใช้ปัจจุบันเป็นเจ้าของการจองหรือไม่
-    const bookingObj = updatedBooking.toObject();
-    bookingObj.isOwner = bookingObj.userId._id.toString() === session.user.id;
-    
-    return NextResponse.json({
-      success: true,
-      message: "อัพเดทข้อมูลการจองเรียบร้อยแล้ว",
-      booking: bookingObj
-    });
+    console.log("Updating booking with data:", updateData); // เพิ่ม log เพื่อตรวจสอบข้อมูลที่จะอัปเดต
+
+    const updatedBooking = await Booking.findByIdAndUpdate(
+      params.id,
+      updateData,
+      { new: true }
+    ).populate("roomId", "name capacity equipment image")
+     .populate("userId", "name email");
+
+    if (!updatedBooking) {
+      return NextResponse.json(
+        { error: "ไม่พบรายการจองที่ต้องการแก้ไข" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(updatedBooking);
   } catch (error: any) {
     console.error("Error updating booking:", error);
     return NextResponse.json(
-      { error: error.message || "เกิดข้อผิดพลาดในการอัพเดทข้อมูล" },
+      { error: error.message || "Failed to update booking" },
       { status: 500 }
     );
   }
